@@ -4,9 +4,6 @@ const crypto = require('crypto');
 const cors = require('cors');
 const app = express();
 const upload = multer();
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`API running on port ${port}`));
-
 
 app.use(cors());
 
