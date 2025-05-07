@@ -8,6 +8,10 @@ const upload = multer();
 app.use(cors());
 
 app.post('/decrypt', upload.single('file'), async (req, res) => {
+  console.log("BODY:", req.body); // <--- agrega esto
+  console.log("FILE SIZE:", req.file?.buffer?.length || 0);
+  console.log("mediaKey:", req.body.mediaKey);
+
   try {
     const encBuffer = req.file.buffer;
     const mediaKeyB64 = req.body.media_key;
