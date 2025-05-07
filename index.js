@@ -12,27 +12,27 @@ app.use(express.json());
 
 app.post('/decrypt', upload.single('file'), async (req, res) => {
   try {
-    const encBuffer = req.file.buffer;
-    const mediaKeyB64 = req.body.mediaKey;
+  const encBuffer = req.file.buffer;
+  const mediaKeyB64 = req.body.mediaKey?.trim(); // Asegura que no venga con saltos de línea
 
-    if (!mediaKeyB64) {
-      return res.status(400).json({ error: 'Missing mediaKey' });
-    }
+  if (!mediaKeyB64) throw new Error('Missing mediaKey');
+  const mediaKey = Buffer.from(mediaKeyB64, 'base64');
 
-    const mediaKey = Buffer.from(mediaKeyB64, 'base64');
-    const iv = Buffer.alloc(16, 0);
-    const salt = Buffer.from('WhatsApp Voice Keys');
+  if (mediaKey.length !== 32) throw new Error('Invalid mediaKey length');
 
-    const cipherKey = crypto.createHmac('sha256', mediaKey).update(salt).digest().slice(0, 32);
-    const decipher = crypto.createDecipheriv('aes-256-cbc', cipherKey, iv);
-    const decrypted = Buffer.concat([decipher.update(encBuffer), decipher.final()]);
+  const iv = Buffer.alloc(16, 0);
+  const salt = Buffer.from('WhatsApp Voice Keys');
+  const cipherKey = crypto.createHmac('sha256', mediaKey).update(salt).digest().slice(0, 32);
 
-    res.setHeader('Content-Type', 'audio/ogg');
-    res.send(decrypted);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to decrypt audio' });
-  }
+  const decipher = crypto.createDecipheriv('aes-256-cbc', cipherKey, iv);
+  const decrypted = Buffer.concat([decipher.update(encBuffer), decipher.final()]);
+
+  res.setHeader('Content-Type', 'audio/ogg');
+  res.send(decrypted);
+} catch (err) {
+  console.error(err);
+  res.status(500).json({ error: 'Failed to decrypt audio', details: err.message });
+}
 });
 
 const port = process.env.PORT || 3000;
